@@ -51,11 +51,11 @@ func (t *tracerImpl) StartSpanWithOptions(
 	}
 
 	// The context for the new span.
-	var newCtx *StandardContext
+	var newCtx StandardContext
 	if opts.Parent == nil {
 		newCtx = NewRootStandardContext()
 	} else {
-		newCtx = opts.Parent.(*spanImpl).raw.StandardContext.NewChild()
+		newCtx = opts.Parent.(*spanImpl).raw.NewChild()
 	}
 
 	return t.startSpanInternal(
@@ -67,7 +67,7 @@ func (t *tracerImpl) StartSpanWithOptions(
 }
 
 func (t *tracerImpl) startSpanInternal(
-	newCtx *StandardContext,
+	newCtx StandardContext,
 	operationName string,
 	startTime time.Time,
 	tags opentracing.Tags,

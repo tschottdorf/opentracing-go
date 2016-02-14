@@ -12,7 +12,7 @@ func TestInMemoryRecorderSpans(t *testing.T) {
 	recorder := testutils.NewInMemoryRecorder()
 	var apiRecorder standardtracer.SpanRecorder = recorder
 	span := &standardtracer.RawSpan{
-		StandardContext: &standardtracer.StandardContext{},
+		StandardContext: standardtracer.StandardContext{},
 		Operation:       "test-span",
 		Start:           time.Now(),
 		Duration:        -1,

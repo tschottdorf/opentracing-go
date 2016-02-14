@@ -2,6 +2,11 @@ package standardtracer
 
 import "sync"
 
+type locker struct {
+	sync.RWMutex
+	traceAttrs map[string]string // initialized on first use
+}
+
 // StandardContext holds the basic Span metadata.
 type StandardContext struct {
 	// A probabilistically unique identifier for a [multi-span] trace.
@@ -18,35 +23,34 @@ type StandardContext struct {
 
 	// `tagLock` protects the `traceAttrs` map, which in turn supports
 	// `SetTraceAttribute` and `TraceAttribute`.
-	attrMu     sync.RWMutex
-	traceAttrs map[string]string
+	mu locker
 }
 
 // NewRootStandardContext creates a StandardContext corresponding to a root
 // span.
-func NewRootStandardContext() *StandardContext {
-	return &StandardContext{
-		TraceID:    randomID(),
-		SpanID:     randomID(),
-		Sampled:    randomID()%64 == 0,
-		traceAttrs: make(map[string]string),
+func NewRootStandardContext() StandardContext {
+	return StandardContext{
+		TraceID: randomID(),
+		SpanID:  randomID(),
+		Sampled: randomID()%64 == 0,
+		mu:      locker{traceAttrs: make(map[string]string)},
 	}
 }
 
 // NewChild creates a new child StandardContext.
-func (c *StandardContext) NewChild() *StandardContext {
-	c.attrMu.RLock()
-	newTags := make(map[string]string, len(c.traceAttrs))
-	for k, v := range c.traceAttrs {
+func (c *StandardContext) NewChild() StandardContext {
+	c.mu.RLock()
+	newTags := make(map[string]string, len(c.mu.traceAttrs))
+	for k, v := range c.mu.traceAttrs {
 		newTags[k] = v
 	}
-	c.attrMu.RUnlock()
+	c.mu.RUnlock()
 
-	return &StandardContext{
+	return StandardContext{
 		TraceID:      c.TraceID,
 		SpanID:       randomID(),
 		ParentSpanID: c.SpanID,
 		Sampled:      c.Sampled,
-		traceAttrs:   newTags,
+		mu:           locker{traceAttrs: newTags},
 	}
 }
